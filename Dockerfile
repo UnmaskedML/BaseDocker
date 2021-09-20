@@ -1,6 +1,8 @@
 FROM tensorflow/tensorflow
 
-RUN apt-get update
+RUN apt-get update && apt-get install software-properties-common -y``
+RUN add-apt-repository "deb http://security.ubuntu.com/ubuntu xenial-security main" && \
+    apt update
 
 # Core linux dependencies.
 RUN apt-get install -y \

@@ -1,0 +1,44 @@
+name: Base container build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    env:
+      push: ${{ github.repository_owner == 'UnmaskedML' && (github.ref == 'refs/heads/main')) }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: docker/setup-buildx-action@v1
+        with:
+          driver: docker
+          version: v0.5.1
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        if: ${{ github.repository_owner == 'UnmaskedML' && (github.ref == 'refs/heads/main') }}
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASS }}
+
+      # Base
+      - name: Base - Docker meta
+        id: base_docker_meta
+        uses: docker/metadata-action@v3
+        with:
+          images: gcperkins/unmaskedml-base
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=edge
+            type=semver,pattern={{version}}
+      - name: Base - Build and push
+        uses: docker/build-push-action@v2
+        with:
+          push: ${{ env.push }}
+          load: ${{ !env.push }}
+          context: /
+          file: Dockerfile
+          tags: ${{ steps.base_docker_meta.outputs.tags }}
+          labels: ${{ steps.base_docker_meta.outputs.labels }}
